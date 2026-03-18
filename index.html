@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COAN · Contabilità Analitica</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@400;500;600&family=Overpass:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f0eb;--surface:#fff;--surface2:#f7f6f2;--surface3:#eeecea;
+  --border:#dddad3;--border-strong:#c4c0b5;
+  --text:#18180f;--muted:#6b6858;--faint:#a09d92;
+  --accent:#1b4f91;--accent-bg:#eaf0f9;--accent-mid:#2e68c0;
+  --costo:#8c2020;--costo-bg:#fdf2f2;--costo-border:#e8c0c0;
+  --ricavo:#1a6040;--ricavo-bg:#f0f9f4;--ricavo-border:#b0d9c2;
+  --prev-bg:#e8f4fd;--prev-text:#1a5c8a;
+  --cons-bg:#edf7f2;--cons-text:#1a6040;
+  --warn-bg:#fdf6e3;--warn:#7a5200;
+  --r:5px;--rl:9px;--mono:'Overpass Mono',monospace;--sans:'Overpass',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.5;min-height:100vh;}
+/* HEADER */
+.app-header{background:var(--text);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 22px;border-bottom:2px solid #2e68c0;position:sticky;top:0;z-index:100;}
+.app-header h1{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.meta{font-family:var(--mono);font-size:11px;color:#8a8a88;}
+.hbtn{background:transparent;border:1px solid #4a6fa8;color:#a8c0e8;padding:5px 12px;border-radius:4px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;}
+.hbtn:hover{background:#1e3a5f;}
+.hbtn.ana{border-color:#8a6f2a;color:#d4b86a;}
+.hbtn.ana:hover{background:#3a2e10;}
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:420px 300px 1fr;height:calc(100vh - 41px);}
+.col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
+.col:last-child{border-right:none;}
+.col-head{padding:12px 18px 10px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.col-head h2{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.col-head .sub{font-size:11px;color:var(--faint);margin-top:2px;}
+.col-body{overflow-y:auto;flex:1;}
+/* FORM */
+.form-wrap{padding:16px 18px;}
+.frow{margin-bottom:12px;}
+.frow-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+label.fl{display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+label.fl .opt{font-weight:300;color:var(--faint);text-transform:none;letter-spacing:0;}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r);font-family:var(--sans);font-size:13px;color:var(--text);background:var(--surface);transition:border-color .14s;appearance:none;-webkit-appearance:none;}
+input:focus,select:focus{outline:none;border-color:var(--accent-mid);box-shadow:0 0 0 3px rgba(46,104,192,.1);}
+input.err,select.err{border-color:var(--costo);background:#fff8f8;}
+.ferr{font-size:10px;color:var(--costo);margin-top:3px;}
+.sep-label{display:flex;align-items:center;gap:8px;margin:14px 0 10px;}
+.sep-label span{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.sep-label::after{content:'';flex:1;border-top:1px solid var(--border);}
+/* RIGHE */
+.righe-wrap{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
+.righe-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+.righe-table thead tr{background:var(--surface2);}
+.righe-table th{padding:6px 7px;font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);text-align:left;}
+.righe-table th.r{text-align:right;}
+.righe-table tbody tr:hover{background:var(--surface2);}
+.righe-table tbody tr+tr td{border-top:1px solid var(--border);}
+.righe-table td{padding:5px 5px;vertical-align:middle;}
+.righe-table td select,.righe-table td input{padding:5px 6px;font-size:12px;border-color:transparent;background:transparent;}
+.righe-table td select:hover,.righe-table td input:hover{border-color:var(--border);}
+.righe-table td select:focus,.righe-table td input:focus{background:var(--surface);border-color:var(--accent-mid);}
+.tipo-C{color:var(--costo);font-weight:600;}
+.tipo-R{color:var(--ricavo);font-weight:600;}
+.importo-in{font-family:var(--mono);font-size:12px;text-align:right;}
+.del-cell{text-align:center;width:28px;}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--faint);font-size:14px;padding:2px 4px;border-radius:3px;transition:all .12s;}
+.del-btn:hover{color:var(--costo);background:var(--costo-bg);}
+.add-riga-btn{display:flex;align-items:center;gap:5px;background:none;border:1px dashed var(--border-strong);border-radius:var(--r);width:100%;padding:7px 12px;cursor:pointer;font-family:var(--sans);font-size:12px;color:var(--muted);transition:all .12s;margin-bottom:10px;}
+.add-riga-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--accent-mid);}
+/* BILANCIO */
+.bil-bar{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);font-size:11px;margin-bottom:10px;border:1px solid var(--border);}
+.bil-bar.bil-n{background:var(--surface2);color:var(--muted);}
+.bil-bar.bil-ok{background:var(--ricavo-bg);border-color:var(--ricavo-border);color:var(--ricavo);}
+.bil-dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0;}
+.bil-dot-ok{background:var(--ricavo);}
+.bil-nums{font-family:var(--mono);font-size:11px;margin-left:auto;opacity:.8;}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--r);font-family:var(--sans);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid;transition:all .12s;}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-p:hover{background:var(--accent-mid);}
+.btn-g{background:transparent;color:var(--muted);border-color:var(--border);}
+.btn-g:hover{background:var(--surface2);color:var(--text);}
+.btn-d{background:transparent;color:var(--costo);border-color:var(--costo-border);}
+.btn-d:hover{background:var(--costo-bg);}
+.btn-sm{padding:5px 10px;font-size:11.5px;}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.flash{padding:8px 11px;border-radius:var(--r);font-size:12px;margin-bottom:12px;border:1px solid;display:none;}
+.flash.ok{display:block;background:var(--ricavo-bg);color:var(--ricavo);border-color:var(--ricavo-border);}
+.flash.err{display:block;background:var(--costo-bg);color:var(--costo);border-color:var(--costo-border);}
+/* LIST */
+.reg-card{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+.reg-card:hover{background:var(--surface2);}
+.reg-card.sel{background:var(--accent-bg);border-left:3px solid var(--accent);padding-left:13px;}
+.rc-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.rc-num{font-family:var(--mono);font-size:10px;color:var(--faint);}
+.rc-data{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.rc-desc{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.rc-rif{font-size:11px;color:var(--faint);font-style:italic;margin-bottom:4px;}
+.rc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;}
+.tag{display:inline-block;padding:2px 6px;border-radius:20px;font-size:10px;font-weight:600;}
+.tag-cdc{background:var(--accent-bg);color:var(--accent);}
+.tag-proj{background:#fff4e0;color:#7a4f00;}
+.tag-cons{background:var(--cons-bg);color:var(--cons-text);}
+.tag-prev{background:var(--prev-bg);color:var(--prev-text);}
+.rc-totals{display:flex;gap:10px;margin-bottom:4px;}
+.rt{font-family:var(--mono);font-size:11px;}
+.rt-c{color:var(--costo);}
+.rt-r{color:var(--ricavo);}
+.rt-n{color:var(--faint);}
+.rc-actions{display:flex;gap:4px;margin-top:6px;}
+.empty{text-align:center;padding:36px;color:var(--faint);font-size:12px;}
+/* SINTESI */
+.sint-ctrl{padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.sctrl{flex:1;min-width:110px;}
+.sint-body{padding:18px;overflow-x:auto;}
+.kpis{display:grid;gap:10px;margin-bottom:18px;}
+.kpi{background:var(--surface2);border-radius:var(--r);padding:12px 14px;}
+.kpi-lbl{font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);}
+.kpi-val{font-family:var(--mono);font-size:18px;font-weight:500;margin-top:3px;}
+.kv-c{color:var(--costo);}.kv-r{color:var(--ricavo);}.kv-n{color:var(--text);}
+.kv-pos{color:var(--ricavo);}.kv-neg{color:var(--costo);}
+table.st{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.st th{padding:7px 11px;font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);background:var(--surface2);text-align:left;}
+table.st th.r{text-align:right;}
+table.st th.bl{border-left:1px solid var(--border-strong);}
+table.st td{padding:8px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.st td.r{text-align:right;font-family:var(--mono);font-size:12px;}
+table.st td.bl{border-left:1px solid var(--border);}
+table.st tbody tr:hover td{background:var(--accent-bg);}
+table.st tr.tot td{font-weight:600;background:var(--surface2);border-top:2px solid var(--border);border-bottom:none;}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;}
+.b-cdc{background:var(--accent-bg);color:var(--accent);}
+.b-proj{background:#fff4e0;color:#7a4f00;}
+.b-conto{background:#f3f0ff;color:#3e2fa0;}
+.b-none{background:var(--surface3);color:var(--faint);}
+.sp{color:var(--ricavo);font-weight:500;}.sn{color:var(--costo);font-weight:500;}
+.scpos{color:var(--ricavo);font-size:11px;}.scneg{color:var(--costo);font-size:11px;}.sczero{color:var(--faint);font-size:11px;}
+.no-data{text-align:center;padding:32px;color:var(--faint);font-size:12px;}
+
+/* ═══ ANAGRAFICA OVERLAY ══════════════════════════════════ */
+.ana-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:20px;}
+.ana-overlay.open{display:flex;}
+.ana-panel{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);width:860px;max-width:98vw;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+.ana-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface2);}
+.ana-hdr h2{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+.ana-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px;border-radius:3px;}
+.ana-close:hover{background:var(--surface3);color:var(--text);}
+.ana-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);}
+.ana-tab{padding:10px 22px;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);transition:all .12s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);}
+.ana-tab:hover{color:var(--text);background:var(--surface2);}
+.ana-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ana-body{display:flex;flex:1;overflow:hidden;}
+/* tree + edit panes */
+.ana-tree-pane{width:340px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;}
+.ana-edit-pane{flex:1;padding:20px;overflow-y:auto;}
+.ana-edit-pane h3{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+/* tree nodes */
+.tree-node{display:flex;align-items:center;padding:7px 14px;cursor:pointer;border-bottom:1px solid var(--border);gap:8px;transition:background .1s;}
+.tree-node:hover{background:var(--surface2);}
+.tree-node.active{background:var(--accent-bg);border-left:3px solid var(--accent);padding-left:11px;}
+.tree-node.group-node{background:var(--surface2);}
+.tree-node.group-node .node-code{font-weight:600;color:var(--muted);}
+.tree-indent{flex-shrink:0;display:inline-block;}
+.node-expand{cursor:pointer;color:var(--faint);font-size:12px;width:14px;text-align:center;flex-shrink:0;}
+.node-code{font-family:var(--mono);font-size:11px;font-weight:500;min-width:70px;}
+.node-desc{font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.node-tipo{font-size:10px;padding:1px 5px;border-radius:3px;background:var(--surface3);color:var(--muted);flex-shrink:0;}
+.node-tipo.C{background:var(--costo-bg);color:var(--costo);}
+.node-tipo.R{background:var(--ricavo-bg);color:var(--ricavo);}
+.node-tipo.G{background:var(--accent-bg);color:var(--accent);}
+.node-actions{display:flex;gap:3px;flex-shrink:0;opacity:0;transition:opacity .1s;}
+.tree-node:hover .node-actions{opacity:1;}
+.node-btn{background:none;border:none;cursor:pointer;color:var(--faint);font-size:12px;padding:2px 4px;border-radius:3px;line-height:1;}
+.node-btn:hover{background:var(--surface3);color:var(--text);}
+.node-btn.del:hover{color:var(--costo);background:var(--costo-bg);}
+.tree-add-root{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid var(--border);cursor:pointer;font-size:12px;color:var(--muted);background:none;width:100%;font-family:var(--sans);transition:all .12s;}
+.tree-add-root:hover{background:var(--surface2);color:var(--accent);}
+/* edit form in ana */
+.ef-row{margin-bottom:12px;}
+.ef-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.ef-actions{display:flex;gap:8px;margin-top:16px;}
+.ef-flash{padding:7px 10px;border-radius:var(--r);font-size:12px;margin-top:10px;display:none;}
+.ef-flash.ok{display:block;background:var(--ricavo-bg);color:var(--ricavo);border:1px solid var(--ricavo-border);}
+.ef-flash.err{display:block;background:var(--costo-bg);color:var(--costo);border:1px solid var(--costo-border);}
+</style>
+</head>
+<body>
+<div class="app-header">
+  <h1>COAN — Contabilità Analitica</h1>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="meta" id="hdr-meta">0 registrazioni</span>
+    <button class="hbtn ana" onclick="apriAna()">☰ Anagrafiche</button>
+    <button class="hbtn" onclick="esportaDati()">↓ Esporta JSON</button>
+    <label class="hbtn" style="cursor:pointer;">↑ Importa JSON<input type="file" id="import-file" accept=".json" style="display:none" onchange="importaDati(this)"></label>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- COL 1: FORM -->
+  <div class="col">
+    <div class="col-head">
+      <h2 id="form-title">Nuova registrazione</h2>
+      <div class="sub" id="form-sub">Testata + righe di dettaglio</div>
+    </div>
+    <div class="col-body"><div class="form-wrap">
+      <div id="flash" class="flash"></div>
+      <div class="frow-2">
+        <div>
+          <label class="fl">Data <span id="e-data" class="ferr"></span></label>
+          <input type="date" id="f-data">
+        </div>
+        <div>
+          <label class="fl">Tipo movimento</label>
+          <select id="f-tmov"><option value="C">Consuntivo</option><option value="P">Previsionale</option></select>
+        </div>
+      </div>
+      <div class="frow-2">
+        <div>
+          <label class="fl">Descrizione <span id="e-desc" class="ferr"></span></label>
+          <input type="text" id="f-desc" placeholder="Oggetto della registrazione…" maxlength="120">
+        </div>
+        <div>
+          <label class="fl">Rif. CoGe <span class="opt">(opz.)</span></label>
+          <input type="text" id="f-rif" placeholder="es. P.D. 2025/42" maxlength="30">
+        </div>
+      </div>
+      <div class="sep-label"><span>Righe di movimento</span></div>
+      <div class="bil-bar bil-n" id="bil-bar">
+        <div class="bil-dot" id="bil-dot"></div>
+        <span id="bil-txt">Inserisci almeno una riga</span>
+        <span class="bil-nums" id="bil-nums"></span>
+      </div>
+      <div class="righe-wrap">
+        <table class="righe-table">
+          <thead><tr>
+            <th style="width:72px">CDC <span id="e-righe" class="ferr"></span></th>
+            <th style="width:78px">Progetto</th>
+            <th style="width:86px">Conto</th>
+            <th style="width:40px">Tipo</th>
+            <th style="width:76px" class="r">Importo</th>
+            <th style="width:28px"></th>
+          </tr></thead>
+          <tbody id="righe-body"></tbody>
+        </table>
+      </div>
+      <button class="add-riga-btn" onclick="addRiga()"><span style="font-size:16px;line-height:1">+</span> Aggiungi riga</button>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="salva()">Salva</button>
+        <button class="btn btn-g" id="btn-annulla" onclick="nuovaRegistrazione()" style="display:none">Annulla</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- COL 2: ELENCO -->
+  <div class="col">
+    <div class="col-head">
+      <h2>Registrazioni</h2>
+      <div class="sub" id="list-sub">Clicca per modificare</div>
+    </div>
+    <div class="col-body" id="list-body"></div>
+  </div>
+
+  <!-- COL 3: SINTESI -->
+  <div class="col" style="border-right:none;">
+    <div class="col-head">
+      <h2>Vista sintetica</h2>
+      <div class="sub">Aggregazione configurabile</div>
+    </div>
+    <div class="sint-ctrl">
+      <div class="sctrl"><label class="fl">Raggruppa per</label>
+        <select id="s-grp" onchange="renderSintesi()">
+          <option value="cdc">Centro di Costo</option>
+          <option value="progetto">Progetto</option>
+          <option value="conto">Conto Analitico</option>
+        </select></div>
+      <div class="sctrl"><label class="fl">Filtra CDC</label>
+        <select id="s-cdc" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
+      <div class="sctrl"><label class="fl">Filtra Progetto</label>
+        <select id="s-prj" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
+      <div class="sctrl"><label class="fl">Filtra Conto</label>
+        <select id="s-cto" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
+      <div class="sctrl"><label class="fl">Tipo</label>
+        <select id="s-tmov" onchange="renderSintesi()">
+          <option value="">Tutti</option>
+          <option value="C">Solo Consuntivo</option>
+          <option value="P">Solo Previsionale</option>
+        </select></div>
+    </div>
+    <div class="col-body"><div class="sint-body" id="sint-body"></div></div>
+  </div>
+</div>
+
+<!-- ═══ ANAGRAFICA OVERLAY ══════════════════════════════════ -->
+<div class="ana-overlay" id="ana-overlay">
+  <div class="ana-panel">
+    <div class="ana-hdr">
+      <h2>Gestione Anagrafiche</h2>
+      <button class="ana-close" onclick="chiudiAna()">×</button>
+    </div>
+    <div class="ana-tabs">
+      <button class="ana-tab active" id="tab-cdc"    onclick="setAnaTab('cdc')">Centri di Costo</button>
+      <button class="ana-tab"        id="tab-conti"  onclick="setAnaTab('conti')">Piano dei Conti</button>
+      <button class="ana-tab"        id="tab-proj"   onclick="setAnaTab('proj')">Progetti</button>
+    </div>
+    <div class="ana-body">
+      <div class="ana-tree-pane" id="ana-tree"></div>
+      <div class="ana-edit-pane" id="ana-edit">
+        <div class="no-data" style="margin-top:40px;">Seleziona un elemento dal pannello di sinistra<br>oppure aggiungi un nuovo elemento</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ge=function(id){return document.getElementById(id);};
+var fmt=function(n){return n===0?'—':n.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});};
+var fmtD=function(s){return s.split('-').reverse().join('/');};
+
+/* ═══ ANAGRAFICHE DATA ════════════════════════════════════ */
+// CDC: {id, codice, desc, parentId}  parentId=null = root
+var cdcList = [
+  {id:'ADM', codice:'ADM', desc:'Amministrazione', parentId:null},
+  {id:'COM', codice:'COM', desc:'Commerciale',     parentId:null},
+  {id:'IT',  codice:'IT',  desc:'Informatica',     parentId:null},
+  {id:'OPE', codice:'OPE', desc:'Operations',      parentId:null},
+  {id:'RD',  codice:'RD',  desc:'Ricerca & Sviluppo', parentId:null},
+  {id:'MKT', codice:'MKT', desc:'Marketing',       parentId:null},
+];
+
+// CONTI: {id, codice, desc, parentId, tipo}  tipo: G=gruppo, C=costo, R=ricavo
+var contiList = [
+  {id:'g60', codice:'60', desc:'Costi del personale',      parentId:null,  tipo:'G'},
+    {id:'6001',codice:'6001',desc:'Stipendi e salari',      parentId:'g60', tipo:'C'},
+    {id:'6010',codice:'6010',desc:'Oneri sociali',          parentId:'g60', tipo:'C'},
+    {id:'6020',codice:'6020',desc:'TFR',                    parentId:'g60', tipo:'C'},
+  {id:'g61', codice:'61', desc:'Servizi',                  parentId:null,  tipo:'G'},
+    {id:'6100',codice:'6100',desc:'Consulenze esterne',     parentId:'g61', tipo:'C'},
+    {id:'6110',codice:'6110',desc:'Licenze software',       parentId:'g61', tipo:'C'},
+    {id:'6120',codice:'6120',desc:'Utenze e canoni',        parentId:'g61', tipo:'C'},
+    {id:'6130',codice:'6130',desc:'Pubblicità',             parentId:'g61', tipo:'C'},
+  {id:'g62', codice:'62', desc:'Beni',                     parentId:null,  tipo:'G'},
+    {id:'6200',codice:'6200',desc:'Materiali di consumo',   parentId:'g62', tipo:'C'},
+    {id:'6210',codice:'6210',desc:'Attrezzatura',           parentId:'g62', tipo:'C'},
+  {id:'g63', codice:'63', desc:'Ammortamenti',             parentId:null,  tipo:'G'},
+    {id:'6300',codice:'6300',desc:'Amm.to imm. mat.',       parentId:'g63', tipo:'C'},
+    {id:'6310',codice:'6310',desc:'Amm.to imm. immat.',     parentId:'g63', tipo:'C'},
+  {id:'g70', codice:'70', desc:'Ricavi',                   parentId:null,  tipo:'G'},
+    {id:'7001',codice:'7001',desc:'Ricavi da vendita',      parentId:'g70', tipo:'R'},
+    {id:'7010',codice:'7010',desc:'Ricavi da servizi',      parentId:'g70', tipo:'R'},
+    {id:'7020',codice:'7020',desc:'Ribaltamenti interni',   parentId:'g70', tipo:'R'},
+];
+
+// PROGETTI: {id, codice, desc, parentId}
+var progettiList = [
+  {id:'PROJ-001', codice:'PROJ-001', desc:'Digitalizzazione',  parentId:null},
+  {id:'PROJ-002', codice:'PROJ-002', desc:'CRM Upgrade',       parentId:null},
+  {id:'PROJ-003', codice:'PROJ-003', desc:'Nuovi mercati',     parentId:null},
+  {id:'PROJ-004', codice:'PROJ-004', desc:'R&D Alpha',         parentId:null},
+  {id:'PROJ-005', codice:'PROJ-005', desc:'Compliance 2025',   parentId:null},
+];
+
+/* lookup helpers */
+function cdcDesc(id){ for(var i=0;i<cdcList.length;i++) if(cdcList[i].id===id) return cdcList[i].desc; return id; }
+function contoDesc(id){ for(var i=0;i<contiList.length;i++) if(contiList[i].id===id) return contiList[i].desc; return id; }
+function projDesc(id){ for(var i=0;i<progettiList.length;i++) if(progettiList[i].id===id) return progettiList[i].desc; return id; }
+
+/* build select options from hierarchical list */
+function buildCdcOpts(sel){
+  function kids(pid){ return cdcList.filter(function(c){return c.parentId===pid;}); }
+  function render(pid,depth){
+    var h='', cs=kids(pid);
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i], pad='\u00a0\u00a0\u00a0'.repeat(depth);
+      h+='<option value="'+c.codice+'"'+(c.codice===sel?' selected':'')+'>'+pad+c.codice+' · '+c.desc+'</option>';
+      h+=render(c.id,depth+1);
+    }
+    return h;
+  }
+  return render(null,0);
+}
+function buildContoOpts(sel){
+  function kids(pid){ return contiList.filter(function(c){return c.parentId===pid;}); }
+  function render(pid,depth){
+    var h='', cs=kids(pid);
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i], pad='\u00a0\u00a0\u00a0'.repeat(depth);
+      if(c.tipo==='G'){
+        h+='<optgroup label="'+pad+c.codice+' '+c.desc+'">';
+        h+=render(c.id,0);
+        h+='</optgroup>';
+      } else {
+        h+='<option value="'+c.codice+'"'+(c.codice===sel?' selected':'')+'>'+pad+c.codice+' · '+c.desc+'</option>';
+        h+=render(c.id,depth+1);
+      }
+    }
+    return h;
+  }
+  return '<option value="">— seleziona —</option>'+render(null,0);
+}
+function buildProjOpts(sel){
+  function kids(pid){ return progettiList.filter(function(c){return c.parentId===pid;}); }
+  function render(pid,depth){
+    var h='', cs=kids(pid);
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i], pad='\u00a0\u00a0\u00a0'.repeat(depth);
+      h+='<option value="'+c.codice+'"'+(c.codice===sel?' selected':'')+'>'+pad+c.codice+' · '+c.desc+'</option>';
+      h+=render(c.id,depth+1);
+    }
+    return h;
+  }
+  return '<option value="">— nessun progetto —</option>'+render(null,0);
+}
+
+/* ═══ REGISTRAZIONI DATA ══════════════════════════════════ */
+var registrazioni = [
+  {id:1,data:'2025-01-15',rif:'P.D. 2025/003',desc:'Costi personale — Gennaio',tmov:'C',righe:[
+    {id:1,cdc:'ADM',progetto:'',conto:'6001',tipo:'C',importo:12500},
+    {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6001',tipo:'C',importo:4800},
+    {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6001',tipo:'C',importo:5200},
+    {id:4,cdc:'COM',progetto:'',conto:'6001',tipo:'C',importo:6100}]},
+  {id:2,data:'2025-01-31',rif:'P.D. 2025/008',desc:'Oneri sociali — Gennaio',tmov:'C',righe:[
+    {id:1,cdc:'ADM',progetto:'',conto:'6010',tipo:'C',importo:3750},
+    {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6010',tipo:'C',importo:1440},
+    {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6010',tipo:'C',importo:1560},
+    {id:4,cdc:'COM',progetto:'',conto:'6010',tipo:'C',importo:1830}]},
+  {id:3,data:'2025-02-10',rif:'',desc:'Licenze e consulenze IT',tmov:'C',righe:[
+    {id:1,cdc:'IT',progetto:'PROJ-002',conto:'6110',tipo:'C',importo:3200},
+    {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6100',tipo:'C',importo:8000}]},
+  {id:4,data:'2025-02-15',rif:'P.D. 2025/015',desc:'Ricavi commerciali — Febbraio',tmov:'C',righe:[
+    {id:1,cdc:'COM',progetto:'PROJ-003',conto:'7001',tipo:'R',importo:22000},
+    {id:2,cdc:'COM',progetto:'',conto:'7010',tipo:'R',importo:9500}]},
+  {id:5,data:'2025-02-28',rif:'',desc:'Ribaltamento IT su Operations',tmov:'C',righe:[
+    {id:1,cdc:'IT',progetto:'PROJ-001',conto:'7020',tipo:'R',importo:4200},
+    {id:2,cdc:'OPE',progetto:'',conto:'6100',tipo:'C',importo:4200}]},
+  {id:6,data:'2025-03-01',rif:'P.D. 2025/021',desc:'Ammortamenti — Marzo',tmov:'C',righe:[
+    {id:1,cdc:'IT',progetto:'PROJ-001',conto:'6210',tipo:'C',importo:1500},
+    {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6310',tipo:'C',importo:2100},
+    {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6300',tipo:'C',importo:900}]},
+  {id:7,data:'2025-03-15',rif:'',desc:'Campagna Marketing — Fiera Milano',tmov:'C',righe:[
+    {id:1,cdc:'MKT',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:6200},
+    {id:2,cdc:'COM',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:1800}]},
+  {id:8,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget personale Q1',tmov:'P',righe:[
+    {id:1,cdc:'ADM',progetto:'',conto:'6001',tipo:'C',importo:13000},
+    {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6001',tipo:'C',importo:5000},
+    {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6001',tipo:'C',importo:5500},
+    {id:4,cdc:'COM',progetto:'',conto:'6001',tipo:'C',importo:6500}]},
+  {id:9,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget licenze e consulenze IT',tmov:'P',righe:[
+    {id:1,cdc:'IT',progetto:'PROJ-002',conto:'6110',tipo:'C',importo:3500},
+    {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6100',tipo:'C',importo:9000}]},
+  {id:10,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget ricavi commerciali',tmov:'P',righe:[
+    {id:1,cdc:'COM',progetto:'PROJ-003',conto:'7001',tipo:'R',importo:25000},
+    {id:2,cdc:'COM',progetto:'',conto:'7010',tipo:'R',importo:10000}]},
+  {id:11,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget marketing',tmov:'P',righe:[
+    {id:1,cdc:'MKT',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:7000},
+    {id:2,cdc:'COM',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:2000}]}
+];
+var nextId=12, nextRigaId=1, editId=null, formRighe=[];
+
+/* ═══ FORM RIGHE ══════════════════════════════════════════ */
+function renderRigheBody(){
+  var tb=ge('righe-body');
+  if(formRighe.length===0){
+    tb.innerHTML='<tr><td colspan="6" style="padding:14px;text-align:center;color:var(--faint);font-size:12px;">Nessuna riga — clicca "Aggiungi riga"</td></tr>';
+    updateBilancio(); return;
+  }
+  var h='';
+  for(var i=0;i<formRighe.length;i++){
+    var r=formRighe[i];
+    h+='<tr>';
+    h+='<td><select onchange="updateRiga('+r.id+',\'cdc\',this.value)"'+(r.cdc?'':' class="err"')+'>'+buildCdcOpts(r.cdc)+'</select></td>';
+    h+='<td><select onchange="updateRiga('+r.id+',\'progetto\',this.value)">'+buildProjOpts(r.progetto)+'</select></td>';
+    h+='<td><select onchange="updateRiga('+r.id+',\'conto\',this.value)"'+(r.conto?'':' class="err"')+'>'+buildContoOpts(r.conto)+'</select></td>';
+    h+='<td><select class="tipo-'+r.tipo+'" onchange="updateRiga('+r.id+',\'tipo\',this.value);this.className=\'tipo-\'+this.value"><option value="C"'+(r.tipo==='C'?' selected':'')+'>C</option><option value="R"'+(r.tipo==='R'?' selected':'')+'>R</option></select></td>';
+    h+='<td><input type="text" inputmode="decimal" class="importo-in'+(r.importo===''?' err':'')+'" value="'+(r.importo!==''?r.importo:'')+'" placeholder="0,00" oninput="onImp(this,'+r.id+')"></td>';
+    h+='<td class="del-cell"><button class="del-btn" onclick="removeRiga('+r.id+')">×</button></td>';
+    h+='</tr>';
+  }
+  tb.innerHTML=h;
+  updateBilancio();
+}
+function onImp(inp,id){ var v=parseFloat(inp.value.replace(',','.')); updateRiga(id,'importo',isNaN(v)?'':v); }
+function addRiga(){ var first=cdcList.length?cdcList[0].codice:''; formRighe.push({id:nextRigaId++,cdc:first,progetto:'',conto:'',tipo:'C',importo:''}); renderRigheBody(); }
+function removeRiga(id){ var a=[]; for(var i=0;i<formRighe.length;i++) if(formRighe[i].id!==id) a.push(formRighe[i]); formRighe=a; renderRigheBody(); }
+function updateRiga(id,field,value){ for(var i=0;i<formRighe.length;i++) if(formRighe[i].id===id){ formRighe[i][field]=value; break; } updateBilancio(); }
+
+function updateBilancio(){
+  var c=0,r=0;
+  for(var i=0;i<formRighe.length;i++){ var v=parseFloat(formRighe[i].importo)||0; if(formRighe[i].tipo==='C') c+=v; else r+=v; }
+  var bar=ge('bil-bar'),dot=ge('bil-dot'),txt=ge('bil-txt'),nums=ge('bil-nums');
+  if(formRighe.length===0){ bar.className='bil-bar bil-n'; dot.className='bil-dot'; txt.textContent='Inserisci almeno una riga'; nums.textContent=''; return; }
+  nums.textContent='C '+fmt(c)+'  R '+fmt(r);
+  var n=formRighe.length;
+  if(c>0&&r>0&&Math.abs(c-r)<0.01){ bar.className='bil-bar bil-ok'; dot.className='bil-dot bil-dot-ok'; txt.textContent='Registrazione bilanciata (ribaltamento)'; }
+  else if(r===0){ bar.className='bil-bar bil-n'; dot.className='bil-dot'; txt.textContent=n+(n>1?' righe':' riga')+' di costo'; }
+  else if(c===0){ bar.className='bil-bar bil-n'; dot.className='bil-dot'; txt.textContent=n+(n>1?' righe':' riga')+' di ricavo'; }
+  else { bar.className='bil-bar bil-n'; dot.className='bil-dot'; txt.textContent='Misto C/R · diff. '+fmt(Math.abs(c-r))+' (informativo)'; }
+}
+
+/* ═══ SALVA / MODIFICA ════════════════════════════════════ */
+function salva(){
+  ge('e-data').textContent=''; ge('e-desc').textContent=''; ge('e-righe').textContent='';
+  ge('f-data').classList.remove('err'); ge('f-desc').classList.remove('err');
+  var data=ge('f-data').value,tmov=ge('f-tmov').value,desc=ge('f-desc').value.trim(),rif=ge('f-rif').value.trim(),ok=true;
+  if(!data){ ge('e-data').textContent='· obbligatoria'; ge('f-data').classList.add('err'); ok=false; }
+  if(!desc){ ge('e-desc').textContent='· obbligatoria'; ge('f-desc').classList.add('err'); ok=false; }
+  if(formRighe.length===0){ ge('e-righe').textContent='· nessuna riga'; ok=false; }
+  for(var i=0;i<formRighe.length;i++){
+    var fr=formRighe[i];
+    if(!fr.cdc||!fr.conto||fr.importo===''||fr.importo===null||fr.importo===0||isNaN(fr.importo)){ ge('e-righe').textContent='· righe incomplete'; ok=false; break; }
+  }
+  if(!ok){ showFlash('err','Correggere gli errori indicati.'); return; }
+  var righe=[];
+  for(var j=0;j<formRighe.length;j++){ var fr=formRighe[j]; righe.push({id:j+1,cdc:fr.cdc,progetto:fr.progetto,conto:fr.conto,tipo:fr.tipo,importo:fr.importo}); }
+  if(editId!==null){
+    for(var k=0;k<registrazioni.length;k++) if(registrazioni[k].id===editId){ registrazioni[k]={id:editId,data:data,rif:rif,desc:desc,tmov:tmov,righe:righe}; break; }
+    showFlash('ok','Registrazione #'+editId+' aggiornata.');
+  } else {
+    registrazioni.push({id:nextId++,data:data,rif:rif,desc:desc,tmov:tmov,righe:righe});
+    showFlash('ok','Registrazione salvata.');
+  }
+  nuovaRegistrazione(); renderAll();
+}
+function nuovaRegistrazione(){
+  editId=null; ge('f-data').valueAsDate=new Date(); ge('f-tmov').value='C'; ge('f-rif').value=''; ge('f-desc').value='';
+  formRighe=[]; renderRigheBody();
+  ge('e-data').textContent=''; ge('e-desc').textContent=''; ge('e-righe').textContent='';
+  ge('form-title').textContent='Nuova registrazione'; ge('form-sub').textContent='Testata + righe di dettaglio';
+  ge('btn-annulla').style.display='none'; renderList();
+}
+function caricaInForm(id){
+  var reg=null; for(var i=0;i<registrazioni.length;i++) if(registrazioni[i].id===id){ reg=registrazioni[i]; break; }
+  if(!reg) return;
+  editId=id; ge('f-data').value=reg.data; ge('f-tmov').value=reg.tmov||'C';
+  ge('f-rif').value=reg.rif||''; ge('f-desc').value=reg.desc;
+  formRighe=[]; for(var j=0;j<reg.righe.length;j++){ var r=reg.righe[j]; formRighe.push({id:nextRigaId++,cdc:r.cdc,progetto:r.progetto,conto:r.conto,tipo:r.tipo,importo:r.importo}); }
+  renderRigheBody();
+  ge('e-data').textContent=''; ge('e-desc').textContent=''; ge('e-righe').textContent='';
+  ge('form-title').textContent='Modifica #'+id;
+  ge('form-sub').textContent=reg.righe.length+(reg.righe.length>1?' righe':' riga');
+  ge('btn-annulla').style.display='inline-flex'; renderList();
+}
+function chiediConferma(id){ ge('del-btn-'+id).style.display='none'; ge('del-cfm-'+id).style.display='inline-flex'; }
+function annullaElimina(id){ ge('del-btn-'+id).style.display='inline-flex'; ge('del-cfm-'+id).style.display='none'; }
+function eliminaReg(id){
+  var a=[]; for(var i=0;i<registrazioni.length;i++) if(registrazioni[i].id!==id) a.push(registrazioni[i]);
+  registrazioni=a; if(editId===id) nuovaRegistrazione(); renderAll();
+}
+
+/* ═══ RENDER LIST ════════════════════════════════════════ */
+function renderList(){
+  var body=ge('list-body');
+  var sorted=registrazioni.slice().sort(function(a,b){ return b.data.localeCompare(a.data)||b.id-a.id; });
+  var totMov=0; for(var i=0;i<registrazioni.length;i++) totMov+=registrazioni[i].righe.length;
+  ge('list-sub').textContent=registrazioni.length+' reg. · '+totMov+' movimenti';
+  ge('hdr-meta').textContent=registrazioni.length+' registrazioni · '+totMov+' movimenti';
+  if(sorted.length===0){ body.innerHTML='<div class="empty">Nessuna registrazione</div>'; return; }
+  var h='';
+  for(var i=0;i<sorted.length;i++){
+    var r=sorted[i],c=0,rv=0,cdcs=[],projs=[];
+    for(var j=0;j<r.righe.length;j++){
+      var g=r.righe[j]; if(g.tipo==='C') c+=g.importo; else rv+=g.importo;
+      if(cdcs.indexOf(g.cdc)<0) cdcs.push(g.cdc);
+      if(g.progetto&&projs.indexOf(g.progetto)<0) projs.push(g.progetto);
+    }
+    h+='<div class="reg-card'+(editId===r.id?' sel':'')+'" onclick="caricaInForm('+r.id+')">';
+    h+='<div class="rc-head"><span class="rc-num">#'+r.id+'</span><span class="rc-data">'+fmtD(r.data)+'</span></div>';
+    h+='<div class="rc-desc">'+r.desc+'</div>';
+    if(r.rif) h+='<div class="rc-rif">'+r.rif+'</div>';
+    h+='<div class="rc-tags"><span class="tag '+(r.tmov==='P'?'tag-prev':'tag-cons')+'">'+(r.tmov==='P'?'Previsionale':'Consuntivo')+'</span>';
+    for(var ci=0;ci<cdcs.length;ci++) h+='<span class="tag tag-cdc">'+cdcs[ci]+'</span>';
+    for(var pi=0;pi<projs.length;pi++) h+='<span class="tag tag-proj">'+projs[pi]+'</span>';
+    h+='</div>';
+    h+='<div class="rc-totals"><span class="rt rt-n">'+r.righe.length+' rig.</span>';
+    if(c>0)  h+='<span class="rt rt-c">C '+fmt(c)+'</span>';
+    if(rv>0) h+='<span class="rt rt-r">R '+fmt(rv)+'</span>';
+    h+='</div>';
+    h+='<div class="rc-actions" onclick="event.stopPropagation()">';
+    h+='<button class="btn btn-g btn-sm" onclick="caricaInForm('+r.id+')">Modifica</button>';
+    h+='<button class="btn btn-d btn-sm" id="del-btn-'+r.id+'" onclick="chiediConferma('+r.id+')">Elimina</button>';
+    h+='<span id="del-cfm-'+r.id+'" style="display:none;align-items:center;gap:4px;"><span style="font-size:11px;color:var(--muted)">Sicuro?</span>';
+    h+='<button class="btn btn-d btn-sm" onclick="eliminaReg('+r.id+')">Sì</button>';
+    h+='<button class="btn btn-g btn-sm" onclick="annullaElimina('+r.id+')">No</button></span>';
+    h+='</div></div>';
+  }
+  body.innerHTML=h;
+}
+
+/* ═══ SINTESI ════════════════════════════════════════════ */
+function allRighe(){
+  var out=[];
+  for(var i=0;i<registrazioni.length;i++){
+    var reg=registrazioni[i];
+    for(var j=0;j<reg.righe.length;j++){
+      var g=reg.righe[j];
+      out.push({cdc:g.cdc,progetto:g.progetto,conto:g.conto,tipo:g.tipo,importo:g.importo,tmov:reg.tmov||'C'});
+    }
+  }
+  return out;
+}
+function updateFilters(){
+  var all=allRighe(),cdcs=[],projs=[],conti=[];
+  for(var i=0;i<all.length;i++){
+    if(cdcs.indexOf(all[i].cdc)<0) cdcs.push(all[i].cdc);
+    if(all[i].progetto&&projs.indexOf(all[i].progetto)<0) projs.push(all[i].progetto);
+    if(conti.indexOf(all[i].conto)<0) conti.push(all[i].conto);
+  }
+  cdcs.sort(); projs.sort(); conti.sort();
+  var sCdc=ge('s-cdc'),sPrj=ge('s-prj'),sCto=ge('s-cto');
+  var vCdc=sCdc.value,vPrj=sPrj.value,vCto=sCto.value;
+  var h='<option value="">Tutti</option>';
+  for(var i=0;i<cdcs.length;i++) h+='<option value="'+cdcs[i]+'">'+cdcs[i]+' · '+cdcDesc(cdcs[i])+'</option>';
+  sCdc.innerHTML=h;
+  h='<option value="">Tutti</option>';
+  for(var i=0;i<projs.length;i++) h+='<option value="'+projs[i]+'">'+projs[i]+' · '+projDesc(projs[i])+'</option>';
+  sPrj.innerHTML=h;
+  h='<option value="">Tutti</option>';
+  for(var i=0;i<conti.length;i++) h+='<option value="'+conti[i]+'">'+conti[i]+' · '+contoDesc(conti[i])+'</option>';
+  sCto.innerHTML=h;
+  sCdc.value=vCdc; sPrj.value=vPrj; sCto.value=vCto;
+}
+function renderSintesi(){
+  var grp=ge('s-grp').value,fCdc=ge('s-cdc').value,fPrj=ge('s-prj').value,fCto=ge('s-cto').value,fTmov=ge('s-tmov').value;
+  var all=allRighe(),dati=[];
+  for(var i=0;i<all.length;i++){
+    var d=all[i];
+    if(fCdc&&d.cdc!==fCdc) continue;
+    if(fPrj&&d.progetto!==fPrj) continue;
+    if(fCto&&d.conto!==fCto) continue;
+    if(fTmov&&d.tmov!==fTmov) continue;
+    dati.push(d);
+  }
+  var totCP=0,totCC=0,totRP=0,totRC=0;
+  for(var i=0;i<dati.length;i++){
+    var d=dati[i];
+    if(d.tipo==='C'&&d.tmov==='P') totCP+=d.importo;
+    if(d.tipo==='C'&&d.tmov==='C') totCC+=d.importo;
+    if(d.tipo==='R'&&d.tmov==='P') totRP+=d.importo;
+    if(d.tipo==='R'&&d.tmov==='C') totRC+=d.importo;
+  }
+  var saldoP=totRP-totCP,saldoC=totRC-totCC,scostC=totCC-totCP,scostR=totRC-totRP,nMov=dati.length;
+  var hasP=false,hasC=false;
+  for(var i=0;i<dati.length;i++){ if(dati[i].tmov==='P') hasP=true; if(dati[i].tmov==='C') hasC=true; }
+  var hasBoth=hasP&&hasC, kCols=hasBoth?6:4;
+  var kh='<div class="kpis" style="grid-template-columns:repeat('+kCols+',1fr)">';
+  kh+='<div class="kpi"><div class="kpi-lbl">Movimenti</div><div class="kpi-val kv-n">'+nMov+'</div></div>';
+  kh+='<div class="kpi"><div class="kpi-lbl">Costi Prev.</div><div class="kpi-val kv-c" style="opacity:.7">'+fmt(totCP)+'</div></div>';
+  kh+='<div class="kpi"><div class="kpi-lbl">Costi Cons.</div><div class="kpi-val kv-c">'+fmt(totCC)+'</div></div>';
+  if(hasBoth){ var s1=scostC<=0?'kv-pos':'kv-neg',sym1=scostC<=0?'−':'+'; kh+='<div class="kpi" style="border:1px solid var(--border)"><div class="kpi-lbl">Scost. Costi</div><div class="kpi-val '+s1+'">'+sym1+fmt(Math.abs(scostC))+'</div></div>'; }
+  kh+='<div class="kpi"><div class="kpi-lbl">Ricavi Prev.</div><div class="kpi-val kv-r" style="opacity:.7">'+fmt(totRP)+'</div></div>';
+  kh+='<div class="kpi"><div class="kpi-lbl">Ricavi Cons.</div><div class="kpi-val kv-r">'+fmt(totRC)+'</div></div>';
+  if(hasBoth){ var s2=scostR>=0?'kv-pos':'kv-neg',sym2=scostR>=0?'+':'−'; kh+='<div class="kpi" style="border:1px solid var(--border)"><div class="kpi-lbl">Scost. Ricavi</div><div class="kpi-val '+s2+'">'+sym2+fmt(Math.abs(scostR))+'</div></div>'; }
+  kh+='</div>';
+  var groups={};
+  for(var i=0;i<dati.length;i++){
+    var d=dati[i],key,label,bcls;
+    if(grp==='cdc'){ key=d.cdc; label=d.cdc+' · '+cdcDesc(d.cdc); bcls='b-cdc'; }
+    else if(grp==='progetto'){ key=d.progetto||'(senza progetto)'; label=key==='(senza progetto)'?key:key+' · '+projDesc(key); bcls=key==='(senza progetto)'?'b-none':'b-proj'; }
+    else { key=d.conto; label=d.conto+' · '+contoDesc(d.conto); bcls='b-conto'; }
+    if(!groups[key]) groups[key]={label:label,bcls:bcls,cP:0,cC:0,rP:0,rC:0,n:0};
+    if(d.tipo==='C'&&d.tmov==='P') groups[key].cP+=d.importo;
+    if(d.tipo==='C'&&d.tmov==='C') groups[key].cC+=d.importo;
+    if(d.tipo==='R'&&d.tmov==='P') groups[key].rP+=d.importo;
+    if(d.tipo==='R'&&d.tmov==='C') groups[key].rC+=d.importo;
+    groups[key].n++;
+  }
+  var keys=Object.keys(groups).sort(function(a,b){ var ga=groups[a],gb=groups[b]; return (gb.cP+gb.cC+gb.rP+gb.rC)-(ga.cP+ga.cC+ga.rP+ga.rC); });
+  if(keys.length===0){ ge('sint-body').innerHTML=kh+'<div class="no-data">Nessun dato con i filtri selezionati</div>'; return; }
+  var sCols=hasBoth?3:2;
+  var colP='<span style="font-size:9px;background:var(--prev-bg);color:var(--prev-text);padding:1px 5px;border-radius:3px">PREV</span>';
+  var colC='<span style="font-size:9px;background:var(--cons-bg);color:var(--cons-text);padding:1px 5px;border-radius:3px">CONS</span>';
+  var colS='<span style="font-size:9px;background:var(--surface3);color:var(--muted);padding:1px 5px;border-radius:3px">SCOST</span>';
+  var th='<thead><tr style="border-bottom:none"><th colspan="3"></th>';
+  th+='<th colspan="'+sCols+'" class="r bl" style="border-bottom:1px solid var(--border-strong)">Costi (€)</th>';
+  th+='<th colspan="'+sCols+'" class="r bl" style="border-bottom:1px solid var(--border-strong)">Ricavi (€)</th>';
+  th+='<th colspan="2" class="r bl" style="border-bottom:1px solid var(--border-strong)">Margine (€)</th></tr>';
+  th+='<tr><th>Codice</th><th>Descrizione</th><th class="r">Mov.</th>';
+  th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th>';
+  if(hasBoth) th+='<th class="r">'+colS+'</th>';
+  th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th>';
+  if(hasBoth) th+='<th class="r">'+colS+'</th>';
+  th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th></tr></thead>';
+  var tb='<tbody>';
+  for(var ki=0;ki<keys.length;ki++){
+    var key=keys[ki],g=groups[key],scC=g.cC-g.cP,scR=g.rC-g.rP,mP=g.rP-g.cP,mC=g.rC-g.cC;
+    tb+='<tr>';
+    tb+='<td><span class="badge '+g.bcls+'">'+key+'</span></td>';
+    tb+='<td style="font-size:11px;color:var(--muted)">'+g.label+'</td>';
+    tb+='<td class="r" style="color:var(--faint);font-size:11px">'+g.n+'</td>';
+    tb+='<td class="r bl" style="color:var(--costo);opacity:.7">'+(g.cP?fmt(g.cP):'—')+'</td>';
+    tb+='<td class="r" style="color:var(--costo)">'+(g.cC?fmt(g.cC):'—')+'</td>';
+    if(hasBoth){ var sc1=(g.cP||g.cC)?(scC<=0?'scpos':'scneg'):'sczero',st1=(g.cP||g.cC)?((scC<=0?'−':'+')+fmt(Math.abs(scC))):'—'; tb+='<td class="r '+sc1+'">'+st1+'</td>'; }
+    tb+='<td class="r bl" style="color:var(--ricavo);opacity:.7">'+(g.rP?fmt(g.rP):'—')+'</td>';
+    tb+='<td class="r" style="color:var(--ricavo)">'+(g.rC?fmt(g.rC):'—')+'</td>';
+    if(hasBoth){ var sc2=(g.rP||g.rC)?(scR>=0?'scpos':'scneg'):'sczero',st2=(g.rP||g.rC)?((scR>=0?'+':'−')+fmt(Math.abs(scR))):'—'; tb+='<td class="r '+sc2+'">'+st2+'</td>'; }
+    var mp_col=mP>=0?'var(--ricavo)':'var(--costo)';
+    tb+='<td class="r bl" style="color:'+mp_col+';opacity:.7">'+(g.cP||g.rP?fmt(mP):'—')+'</td>';
+    tb+='<td class="r '+(mC>=0?'sp':'sn')+'">'+(g.cC||g.rC?fmt(mC):'—')+'</td>';
+    tb+='</tr>';
+  }
+  var tsc1=scostC<=0?'scpos':'scneg',tsym1=scostC<=0?'−':'+',tsc2=scostR>=0?'scpos':'scneg',tsym2=scostR>=0?'+':'−';
+  tb+='<tr class="tot"><td colspan="3">Totale</td>';
+  tb+='<td class="r bl" style="color:var(--costo);opacity:.7">'+fmt(totCP)+'</td><td class="r" style="color:var(--costo)">'+fmt(totCC)+'</td>';
+  if(hasBoth) tb+='<td class="r '+tsc1+'">'+tsym1+fmt(Math.abs(scostC))+'</td>';
+  tb+='<td class="r bl" style="color:var(--ricavo);opacity:.7">'+fmt(totRP)+'</td><td class="r" style="color:var(--ricavo)">'+fmt(totRC)+'</td>';
+  if(hasBoth) tb+='<td class="r '+tsc2+'">'+tsym2+fmt(Math.abs(scostR))+'</td>';
+  var tmp_col=saldoP>=0?'var(--ricavo)':'var(--costo)';
+  tb+='<td class="r bl" style="color:'+tmp_col+';opacity:.7">'+fmt(saldoP)+'</td>';
+  tb+='<td class="r '+(saldoC>=0?'sp':'sn')+'">'+fmt(saldoC)+'</td></tr></tbody>';
+  ge('sint-body').innerHTML=kh+'<table class="st">'+th+tb+'</table>';
+}
+
+/* ═══ ANAGRAFICA ═════════════════════════════════════════ */
+var anaTab='cdc', anaSelected=null;
+var anaCollapsed={};  // id -> true if collapsed
+
+function apriAna(){ ge('ana-overlay').classList.add('open'); renderAnaTree(); }
+function chiudiAna(){ ge('ana-overlay').classList.remove('open'); }
+
+function setAnaTab(tab){
+  anaTab=tab; anaSelected=null;
+  ge('tab-cdc').classList.toggle('active',tab==='cdc');
+  ge('tab-conti').classList.toggle('active',tab==='conti');
+  ge('tab-proj').classList.toggle('active',tab==='proj');
+  renderAnaTree();
+  ge('ana-edit').innerHTML='<div class="no-data" style="margin-top:40px;">Seleziona un elemento oppure aggiungi un nuovo elemento</div>';
+}
+
+function getList(){ return anaTab==='cdc'?cdcList:anaTab==='conti'?contiList:progettiList; }
+
+function renderAnaTree(){
+  var list=getList();
+  function kids(pid){ return list.filter(function(c){return c.parentId===pid;}); }
+  function renderNodes(pid,depth){
+    var h='',cs=kids(pid);
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i],hasKids=kids(c.id).length>0;
+      var indent='<span class="tree-indent" style="width:'+(depth*14)+'px"></span>';
+      var expandBtn=hasKids?'<span class="node-expand" onclick="toggleCollapse(\''+c.id+'\');event.stopPropagation()">'+(anaCollapsed[c.id]?'▶':'▼')+'</span>':'<span class="node-expand"></span>';
+      var tipoBadge=c.tipo?'<span class="node-tipo '+c.tipo+'">'+c.tipo+'</span>':'';
+      var isGrp=c.tipo==='G'?' group-node':'';
+      h+='<div class="tree-node'+isGrp+(anaSelected===c.id?' active':'')+'" onclick="selezionaAnaNode(\''+c.id+'\')">';
+      h+=indent+expandBtn;
+      h+='<span class="node-code">'+c.codice+'</span>';
+      h+='<span class="node-desc">'+c.desc+'</span>';
+      h+=tipoBadge;
+      h+='<span class="node-actions">';
+      h+='<button class="node-btn" onclick="anaEdit(\''+c.id+'\');event.stopPropagation()" title="Modifica">✎</button>';
+      h+='<button class="node-btn" onclick="anaAddChild(\''+c.id+'\');event.stopPropagation()" title="Aggiungi figlio">+</button>';
+      h+='<button class="node-btn del" onclick="anaDelete(\''+c.id+'\');event.stopPropagation()" title="Elimina">×</button>';
+      h+='</span></div>';
+      if(!anaCollapsed[c.id]) h+=renderNodes(c.id,depth+1);
+    }
+    return h;
+  }
+  var treeHtml=renderNodes(null,0);
+  var addLbl=anaTab==='cdc'?'Aggiungi CDC':anaTab==='conti'?'Aggiungi conto radice':'Aggiungi progetto';
+  ge('ana-tree').innerHTML=treeHtml+'<button class="tree-add-root" onclick="anaAddRoot()">＋ '+addLbl+'</button>';
+}
+
+function toggleCollapse(id){ anaCollapsed[id]=!anaCollapsed[id]; renderAnaTree(); }
+
+function selezionaAnaNode(id){ anaSelected=id; renderAnaTree(); anaEdit(id); }
+
+function anaAddRoot(){ anaSelected=null; showAnaForm(null,null); }
+function anaAddChild(parentId){ anaSelected=null; showAnaForm(null,parentId); }
+
+function anaEdit(id){
+  var list=getList(), node=null;
+  for(var i=0;i<list.length;i++) if(list[i].id===id){ node=list[i]; break; }
+  if(!node) return;
+  anaSelected=id; renderAnaTree();
+  showAnaForm(node,null);
+}
+
+function showAnaForm(node,forceParent){
+  var list=getList();
+  var isNew=!node;
+  var isCdc=anaTab==='cdc', isConti=anaTab==='conti', isProj=anaTab==='proj';
+  var parentId=isNew?(forceParent||null):(node.parentId);
+
+  // build parent selector
+  function parentOpts(excludeId){
+    var h='<option value="">(radice)</option>';
+    function render(pid,depth){
+      var cs=list.filter(function(c){return c.parentId===pid&&c.id!==excludeId;});
+      for(var i=0;i<cs.length;i++){
+        var c=cs[i],pad='\u00a0\u00a0'.repeat(depth);
+        h+='<option value="'+c.id+'"'+(parentId===c.id?' selected':'')+'>'+pad+c.codice+' · '+c.desc+'</option>';
+        render(c.id,depth+1);
+      }
+    }
+    render(null,0);
+    return h;
+  }
+
+  var tipoField='';
+  if(isConti){
+    var tv=node?node.tipo:'C';
+    tipoField='<div class="ef-row"><label class="fl">Tipo</label><select id="ef-tipo"><option value="G"'+(tv==='G'?' selected':'')+'>G – Gruppo</option><option value="C"'+(tv==='C'?' selected':'')+'>C – Costo</option><option value="R"'+(tv==='R'?' selected':'')+'>R – Ricavo</option></select></div>';
+  }
+
+  var h='<h3>'+(isNew?'Nuovo elemento':'Modifica elemento')+'</h3>';
+  h+='<div class="ef-2">';
+  h+='<div><label class="fl">Codice</label><input type="text" id="ef-codice" value="'+(node?node.codice:'')+'" placeholder="es. ADM" maxlength="20"></div>';
+  h+='<div><label class="fl">Descrizione</label><input type="text" id="ef-desc" value="'+(node?node.desc:'')+'" placeholder="Nome esteso" maxlength="60"></div>';
+  h+='</div>';
+  h+='<div class="ef-row"><label class="fl">Dipende da (gerarchia)</label><select id="ef-parent">'+parentOpts(node?node.id:null)+'</select></div>';
+  h+=tipoField;
+  h+='<div class="ef-actions">';
+  h+='<button class="btn btn-p" onclick="anaFormSalva('+(node?'\''+node.id+'\'':'null')+')">Salva</button>';
+  if(!isNew) h+='<button class="btn btn-g" onclick="anaAddRoot()">Nuovo</button>';
+  h+='</div>';
+  h+='<div class="ef-flash" id="ef-flash"></div>';
+  ge('ana-edit').innerHTML=h;
+}
+
+function anaFormSalva(editNodeId){
+  var codice=(ge('ef-codice').value||'').trim();
+  var desc=(ge('ef-desc').value||'').trim();
+  var parentId=ge('ef-parent').value||null;
+  var tipo=ge('ef-tipo')?ge('ef-tipo').value:null;
+  if(!codice||!desc){ efFlash('err','Codice e descrizione obbligatori.'); return; }
+  var list=getList();
+  // check duplicate codice
+  for(var i=0;i<list.length;i++){
+    if(list[i].codice===codice && list[i].id!==(editNodeId||'')) { efFlash('err','Codice già esistente.'); return; }
+  }
+  if(editNodeId){
+    for(var i=0;i<list.length;i++){
+      if(list[i].id===editNodeId){ list[i].codice=codice; list[i].desc=desc; list[i].parentId=parentId; if(tipo) list[i].tipo=tipo; break; }
+    }
+    efFlash('ok','Elemento aggiornato.');
+  } else {
+    var newId=codice;
+    var node={id:newId,codice:codice,desc:desc,parentId:parentId};
+    if(tipo) node.tipo=tipo;
+    list.push(node);
+    anaSelected=newId;
+    efFlash('ok','Elemento aggiunto.');
+  }
+  renderAnaTree(); renderAll();
+}
+
+function anaDelete(id){
+  var list=getList();
+  // check children
+  var hasKids=list.filter(function(c){return c.parentId===id;}).length>0;
+  if(hasKids){ efFlash('err','Impossibile eliminare: ha elementi figli.'); return; }
+  var newList=list.filter(function(c){return c.id!==id;});
+  if(anaTab==='cdc') cdcList=newList;
+  else if(anaTab==='conti') contiList=newList;
+  else progettiList=newList;
+  if(anaSelected===id) anaSelected=null;
+  ge('ana-edit').innerHTML='<div class="no-data" style="margin-top:40px;">Elemento eliminato.</div>';
+  renderAnaTree(); renderAll();
+}
+
+function efFlash(type,msg){
+  var f=ge('ef-flash'); f.textContent=msg; f.className='ef-flash '+type;
+  setTimeout(function(){ if(f) f.className='ef-flash'; },2500);
+}
+
+/* ═══ EXPORT / IMPORT ════════════════════════════════════ */
+function showFlash(type,msg){
+  var f=ge('flash'); f.textContent=msg; f.className='flash '+type;
+  setTimeout(function(){ f.className='flash'; f.textContent=''; },3000);
+}
+function esportaDati(){
+  var payload={version:2,exportedAt:new Date().toISOString(),nextId:nextId,cdcList:cdcList,contiList:contiList,progettiList:progettiList,registrazioni:registrazioni};
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var ts=new Date().toISOString().slice(0,10);
+  var a=document.createElement('a');
+  a.href=url; a.download='coan_'+ts+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showFlash('ok','Esportato: coan_'+ts+'.json');
+}
+function importaDati(input){
+  var file=input.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var p=JSON.parse(e.target.result);
+      if(!p.registrazioni||!Array.isArray(p.registrazioni)) throw new Error('Formato non valido');
+      registrazioni=p.registrazioni;
+      nextId=p.nextId||(Math.max.apply(null,[0].concat(registrazioni.map(function(r){return r.id;})))+1);
+      if(p.cdcList) cdcList=p.cdcList;
+      if(p.contiList) contiList=p.contiList;
+      if(p.progettiList) progettiList=p.progettiList;
+      nuovaRegistrazione(); renderAll();
+      showFlash('ok','Importate '+registrazioni.length+' registrazioni da "'+file.name+'"');
+    }catch(err){ showFlash('err','Errore: '+err.message); }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function renderAll(){ renderList(); updateFilters(); renderSintesi(); }
+
+document.addEventListener('DOMContentLoaded',function(){
+  ge('f-data').valueAsDate=new Date();
+  renderRigheBody(); renderAll();
+});
+</script>
+</body>
+</html>
