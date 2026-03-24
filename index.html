@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COAN • Contabilità Analitica • v0.3</title>
+<title>COAN · Contabilità Analitica v0.4</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@400;500;600&family=Overpass:wght@300;400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -188,7 +188,7 @@ table.st tr.tot td{font-weight:600;background:var(--surface2);border-top:2px sol
 </head>
 <body>
 <div class="app-header">
-  <h1>COAN — Contabilità Analitica</h1>
+  <h1>COAN — Contabilità Analitica <span style="font-weight:300;opacity:.5;font-size:11px;letter-spacing:.04em">v0.4</span></h1>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="meta" id="hdr-meta">0 registrazioni</span>
     <button class="hbtn ana" onclick="apriAna()">☰ Anagrafiche</button>
@@ -760,8 +760,11 @@ function renderSintesi(){
   tb+='<td class="r bl" style="color:var(--ricavo);opacity:.7">'+fmt(totRP)+'</td><td class="r" style="color:var(--ricavo)">'+fmt(totRC)+'</td>';
   if(hasBoth) tb+='<td class="r '+tsc2+'">'+tsym2+fmt(Math.abs(scostR))+'</td>';
   var tmp_col=saldoP>=0?'var(--ricavo)':'var(--costo)';
+  var totScM=saldoC-saldoP;
   tb+='<td class="r bl" style="color:'+tmp_col+';opacity:.7">'+fmt(saldoP)+'</td>';
-  tb+='<td class="r '+(saldoC>=0?'sp':'sn')+'">'+fmt(saldoC)+'</td></tr></tbody>';
+  tb+='<td class="r '+(saldoC>=0?'sp':'sn')+'">'+fmt(saldoC)+'</td>';
+  if(hasBoth) tb+='<td class="r '+(totScM>=0?'scpos':'scneg')+'">'+(totScM>=0?'+':'−')+fmt(Math.abs(totScM))+'</td>';
+  tb+='</tr></tbody>';
   ge('sint-body').innerHTML=kh+'<table class="st">'+th+tb+'</table>';
 }
 
