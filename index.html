@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COAN · Contabilità Analitica</title>
+<title>COAN • Contabilità Analitica • v0.3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@400;500;600&family=Overpass:wght@300;400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -206,10 +206,14 @@ table.st tr.tot td{font-weight:600;background:var(--surface2);border-top:2px sol
     </div>
     <div class="col-body"><div class="form-wrap">
       <div id="flash" class="flash"></div>
-      <div class="frow-2">
+      <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;margin-bottom:12px;">
         <div>
           <label class="fl">Data <span id="e-data" class="ferr"></span></label>
           <input type="date" id="f-data">
+        </div>
+        <div>
+          <label class="fl">Anno comp.</label>
+          <input type="number" id="f-anno" min="2000" max="2099" placeholder="2025" style="font-family:var(--mono)">
         </div>
         <div>
           <label class="fl">Tipo movimento</label>
@@ -274,6 +278,7 @@ table.st tr.tot td{font-weight:600;background:var(--surface2);border-top:2px sol
           <option value="cdc">Centro di Costo</option>
           <option value="progetto">Progetto</option>
           <option value="conto">Conto Analitico</option>
+          <option value="anno">Anno di competenza</option>
         </select></div>
       <div class="sctrl"><label class="fl">Filtra CDC</label>
         <select id="s-cdc" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
@@ -281,6 +286,8 @@ table.st tr.tot td{font-weight:600;background:var(--surface2);border-top:2px sol
         <select id="s-prj" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
       <div class="sctrl"><label class="fl">Filtra Conto</label>
         <select id="s-cto" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
+      <div class="sctrl"><label class="fl">Anno comp.</label>
+        <select id="s-anno" onchange="renderSintesi()"><option value="">Tutti</option></select></div>
       <div class="sctrl"><label class="fl">Tipo</label>
         <select id="s-tmov" onchange="renderSintesi()">
           <option value="">Tutti</option>
@@ -415,44 +422,44 @@ function buildProjOpts(sel){
 
 /* ═══ REGISTRAZIONI DATA ══════════════════════════════════ */
 var registrazioni = [
-  {id:1,data:'2025-01-15',rif:'P.D. 2025/003',desc:'Costi personale — Gennaio',tmov:'C',righe:[
+  {id:1,data:'2025-01-15',rif:'P.D. 2025/003',desc:'Costi personale — Gennaio',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'ADM',progetto:'',conto:'6001',tipo:'C',importo:12500},
     {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6001',tipo:'C',importo:4800},
     {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6001',tipo:'C',importo:5200},
     {id:4,cdc:'COM',progetto:'',conto:'6001',tipo:'C',importo:6100}]},
-  {id:2,data:'2025-01-31',rif:'P.D. 2025/008',desc:'Oneri sociali — Gennaio',tmov:'C',righe:[
+  {id:2,data:'2025-01-31',rif:'P.D. 2025/008',desc:'Oneri sociali — Gennaio',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'ADM',progetto:'',conto:'6010',tipo:'C',importo:3750},
     {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6010',tipo:'C',importo:1440},
     {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6010',tipo:'C',importo:1560},
     {id:4,cdc:'COM',progetto:'',conto:'6010',tipo:'C',importo:1830}]},
-  {id:3,data:'2025-02-10',rif:'',desc:'Licenze e consulenze IT',tmov:'C',righe:[
+  {id:3,data:'2025-02-10',rif:'',desc:'Licenze e consulenze IT',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'IT',progetto:'PROJ-002',conto:'6110',tipo:'C',importo:3200},
     {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6100',tipo:'C',importo:8000}]},
-  {id:4,data:'2025-02-15',rif:'P.D. 2025/015',desc:'Ricavi commerciali — Febbraio',tmov:'C',righe:[
+  {id:4,data:'2025-02-15',rif:'P.D. 2025/015',desc:'Ricavi commerciali — Febbraio',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'COM',progetto:'PROJ-003',conto:'7001',tipo:'R',importo:22000},
     {id:2,cdc:'COM',progetto:'',conto:'7010',tipo:'R',importo:9500}]},
-  {id:5,data:'2025-02-28',rif:'',desc:'Ribaltamento IT su Operations',tmov:'C',righe:[
+  {id:5,data:'2025-02-28',rif:'',desc:'Ribaltamento IT su Operations',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'IT',progetto:'PROJ-001',conto:'7020',tipo:'R',importo:4200},
     {id:2,cdc:'OPE',progetto:'',conto:'6100',tipo:'C',importo:4200}]},
-  {id:6,data:'2025-03-01',rif:'P.D. 2025/021',desc:'Ammortamenti — Marzo',tmov:'C',righe:[
+  {id:6,data:'2025-03-01',rif:'P.D. 2025/021',desc:'Ammortamenti — Marzo',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'IT',progetto:'PROJ-001',conto:'6210',tipo:'C',importo:1500},
     {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6310',tipo:'C',importo:2100},
     {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6300',tipo:'C',importo:900}]},
-  {id:7,data:'2025-03-15',rif:'',desc:'Campagna Marketing — Fiera Milano',tmov:'C',righe:[
+  {id:7,data:'2025-03-15',rif:'',desc:'Campagna Marketing — Fiera Milano',anno:2025,tmov:'C',righe:[
     {id:1,cdc:'MKT',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:6200},
     {id:2,cdc:'COM',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:1800}]},
-  {id:8,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget personale Q1',tmov:'P',righe:[
+  {id:8,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget personale Q1',anno:2025,tmov:'P',righe:[
     {id:1,cdc:'ADM',progetto:'',conto:'6001',tipo:'C',importo:13000},
     {id:2,cdc:'IT',progetto:'PROJ-002',conto:'6001',tipo:'C',importo:5000},
     {id:3,cdc:'RD',progetto:'PROJ-004',conto:'6001',tipo:'C',importo:5500},
     {id:4,cdc:'COM',progetto:'',conto:'6001',tipo:'C',importo:6500}]},
-  {id:9,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget licenze e consulenze IT',tmov:'P',righe:[
+  {id:9,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget licenze e consulenze IT',anno:2025,tmov:'P',righe:[
     {id:1,cdc:'IT',progetto:'PROJ-002',conto:'6110',tipo:'C',importo:3500},
     {id:2,cdc:'IT',progetto:'PROJ-001',conto:'6100',tipo:'C',importo:9000}]},
-  {id:10,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget ricavi commerciali',tmov:'P',righe:[
+  {id:10,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget ricavi commerciali',anno:2025,tmov:'P',righe:[
     {id:1,cdc:'COM',progetto:'PROJ-003',conto:'7001',tipo:'R',importo:25000},
     {id:2,cdc:'COM',progetto:'',conto:'7010',tipo:'R',importo:10000}]},
-  {id:11,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget marketing',tmov:'P',righe:[
+  {id:11,data:'2025-01-01',rif:'BUDGET 2025',desc:'Budget marketing',anno:2025,tmov:'P',righe:[
     {id:1,cdc:'MKT',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:7000},
     {id:2,cdc:'COM',progetto:'PROJ-003',conto:'6130',tipo:'C',importo:2000}]}
 ];
@@ -502,7 +509,7 @@ function updateBilancio(){
 function salva(){
   ge('e-data').textContent=''; ge('e-desc').textContent=''; ge('e-righe').textContent='';
   ge('f-data').classList.remove('err'); ge('f-desc').classList.remove('err');
-  var data=ge('f-data').value,tmov=ge('f-tmov').value,desc=ge('f-desc').value.trim(),rif=ge('f-rif').value.trim(),ok=true;
+  var data=ge('f-data').value,anno=parseInt(ge('f-anno').value)||new Date().getFullYear(),tmov=ge('f-tmov').value,desc=ge('f-desc').value.trim(),rif=ge('f-rif').value.trim(),ok=true;
   if(!data){ ge('e-data').textContent='· obbligatoria'; ge('f-data').classList.add('err'); ok=false; }
   if(!desc){ ge('e-desc').textContent='· obbligatoria'; ge('f-desc').classList.add('err'); ok=false; }
   if(formRighe.length===0){ ge('e-righe').textContent='· nessuna riga'; ok=false; }
@@ -514,16 +521,16 @@ function salva(){
   var righe=[];
   for(var j=0;j<formRighe.length;j++){ var fr=formRighe[j]; righe.push({id:j+1,cdc:fr.cdc,progetto:fr.progetto,conto:fr.conto,tipo:fr.tipo,importo:fr.importo}); }
   if(editId!==null){
-    for(var k=0;k<registrazioni.length;k++) if(registrazioni[k].id===editId){ registrazioni[k]={id:editId,data:data,rif:rif,desc:desc,tmov:tmov,righe:righe}; break; }
+    for(var k=0;k<registrazioni.length;k++) if(registrazioni[k].id===editId){ registrazioni[k]={id:editId,data:data,anno:anno,rif:rif,desc:desc,tmov:tmov,righe:righe}; break; }
     showFlash('ok','Registrazione #'+editId+' aggiornata.');
   } else {
-    registrazioni.push({id:nextId++,data:data,rif:rif,desc:desc,tmov:tmov,righe:righe});
+    registrazioni.push({id:nextId++,data:data,anno:anno,rif:rif,desc:desc,tmov:tmov,righe:righe});
     showFlash('ok','Registrazione salvata.');
   }
   nuovaRegistrazione(); renderAll();
 }
 function nuovaRegistrazione(){
-  editId=null; ge('f-data').valueAsDate=new Date(); ge('f-tmov').value='C'; ge('f-rif').value=''; ge('f-desc').value='';
+  editId=null; ge('f-data').valueAsDate=new Date(); ge('f-anno').value=new Date().getFullYear(); ge('f-tmov').value='C'; ge('f-rif').value=''; ge('f-desc').value='';
   formRighe=[]; renderRigheBody();
   ge('e-data').textContent=''; ge('e-desc').textContent=''; ge('e-righe').textContent='';
   ge('form-title').textContent='Nuova registrazione'; ge('form-sub').textContent='Testata + righe di dettaglio';
@@ -532,7 +539,7 @@ function nuovaRegistrazione(){
 function caricaInForm(id){
   var reg=null; for(var i=0;i<registrazioni.length;i++) if(registrazioni[i].id===id){ reg=registrazioni[i]; break; }
   if(!reg) return;
-  editId=id; ge('f-data').value=reg.data; ge('f-tmov').value=reg.tmov||'C';
+  editId=id; ge('f-data').value=reg.data; ge('f-anno').value=reg.anno||new Date().getFullYear(); ge('f-tmov').value=reg.tmov||'C';
   ge('f-rif').value=reg.rif||''; ge('f-desc').value=reg.desc;
   formRighe=[]; for(var j=0;j<reg.righe.length;j++){ var r=reg.righe[j]; formRighe.push({id:nextRigaId++,cdc:r.cdc,progetto:r.progetto,conto:r.conto,tipo:r.tipo,importo:r.importo}); }
   renderRigheBody();
@@ -565,7 +572,7 @@ function renderList(){
       if(g.progetto&&projs.indexOf(g.progetto)<0) projs.push(g.progetto);
     }
     h+='<div class="reg-card'+(editId===r.id?' sel':'')+'" onclick="caricaInForm('+r.id+')">';
-    h+='<div class="rc-head"><span class="rc-num">#'+r.id+'</span><span class="rc-data">'+fmtD(r.data)+'</span></div>';
+    h+='<div class="rc-head"><span class="rc-num">#'+r.id+'</span><span class="rc-data">'+fmtD(r.data)+'</span><span style="font-family:var(--mono);font-size:10px;background:var(--surface3);color:var(--muted);padding:1px 6px;border-radius:3px;">'+( r.anno||r.data.slice(0,4))+'</span></div>';
     h+='<div class="rc-desc">'+r.desc+'</div>';
     if(r.rif) h+='<div class="rc-rif">'+r.rif+'</div>';
     h+='<div class="rc-tags"><span class="tag '+(r.tmov==='P'?'tag-prev':'tag-cons')+'">'+(r.tmov==='P'?'Previsionale':'Consuntivo')+'</span>';
@@ -594,41 +601,83 @@ function allRighe(){
     var reg=registrazioni[i];
     for(var j=0;j<reg.righe.length;j++){
       var g=reg.righe[j];
-      out.push({cdc:g.cdc,progetto:g.progetto,conto:g.conto,tipo:g.tipo,importo:g.importo,tmov:reg.tmov||'C'});
+      out.push({cdc:g.cdc,progetto:g.progetto,conto:g.conto,tipo:g.tipo,importo:g.importo,tmov:reg.tmov||'C',anno:reg.anno||reg.data.slice(0,4)*1});
     }
   }
   return out;
 }
-function updateFilters(){
-  var all=allRighe(),cdcs=[],projs=[],conti=[];
-  for(var i=0;i<all.length;i++){
-    if(cdcs.indexOf(all[i].cdc)<0) cdcs.push(all[i].cdc);
-    if(all[i].progetto&&projs.indexOf(all[i].progetto)<0) projs.push(all[i].progetto);
-    if(conti.indexOf(all[i].conto)<0) conti.push(all[i].conto);
+/* returns all descendant ids of a node (inclusive) */
+function getDescendants(id,list){
+  var result=[id];
+  for(var i=0;i<list.length;i++) if(list[i].parentId===id){ var ch=getDescendants(list[i].id,list); for(var j=0;j<ch.length;j++) result.push(ch[j]); }
+  return result;
+}
+/* check if a value matches filter: val must be descendant of filterVal */
+function matchesHier(val,filterVal,list){
+  if(!filterVal) return true;
+  var desc=getDescendants(filterVal,list);
+  return desc.indexOf(val)>=0;
+}
+/* build hierarchical option list for filter selects (all nodes, not just used ones) */
+function buildFilterOpts(list,valSel){
+  function kids(pid){ return list.filter(function(c){return c.parentId===pid;}); }
+  function render(pid,depth){
+    var h='',cs=kids(pid);
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i],pad='   '.repeat(depth);
+      var hasKids=kids(c.id).length>0;
+      var lbl=hasKids?'▸ ':'  ';
+      h+='<option value="'+c.id+'"'+(c.id===valSel?' selected':'')+'>'+pad+lbl+c.codice+' · '+c.desc+'</option>';
+      h+=render(c.id,depth+1);
+    }
+    return h;
   }
-  cdcs.sort(); projs.sort(); conti.sort();
-  var sCdc=ge('s-cdc'),sPrj=ge('s-prj'),sCto=ge('s-cto');
-  var vCdc=sCdc.value,vPrj=sPrj.value,vCto=sCto.value;
-  var h='<option value="">Tutti</option>';
-  for(var i=0;i<cdcs.length;i++) h+='<option value="'+cdcs[i]+'">'+cdcs[i]+' · '+cdcDesc(cdcs[i])+'</option>';
-  sCdc.innerHTML=h;
-  h='<option value="">Tutti</option>';
-  for(var i=0;i<projs.length;i++) h+='<option value="'+projs[i]+'">'+projs[i]+' · '+projDesc(projs[i])+'</option>';
-  sPrj.innerHTML=h;
-  h='<option value="">Tutti</option>';
-  for(var i=0;i<conti.length;i++) h+='<option value="'+conti[i]+'">'+conti[i]+' · '+contoDesc(conti[i])+'</option>';
-  sCto.innerHTML=h;
-  sCdc.value=vCdc; sPrj.value=vPrj; sCto.value=vCto;
+  return '<option value="">Tutti</option>'+render(null,0);
+}
+
+function updateFilters(){
+  var all=allRighe(),anni=[];
+  for(var i=0;i<all.length;i++){
+    if(anni.indexOf(all[i].anno)<0) anni.push(all[i].anno);
+  }
+  anni.sort();
+  var sCdc=ge('s-cdc'),sPrj=ge('s-prj'),sCto=ge('s-cto'),sAnno=ge('s-anno');
+  var vCdc=sCdc.value,vPrj=sPrj.value,vCto=sCto.value,vAnno=sAnno.value;
+  /* hierarchical selects from full anagrafica */
+  sCdc.innerHTML=buildFilterOpts(cdcList,vCdc);
+  sPrj.innerHTML=buildFilterOpts(progettiList,vPrj);
+  /* conti: only show non-group nodes (G nodes are structural) as leaves, groups as headers */
+  function buildContoFilter(pid,depth){
+    var list2=contiList,h='';
+    var cs=list2.filter(function(c){return c.parentId===pid;});
+    for(var i=0;i<cs.length;i++){
+      var c=cs[i],pad='   '.repeat(depth);
+      if(c.tipo==='G'){
+        h+='<option value="'+c.id+'"'+(c.id===vCto?' selected':'')+' style="font-weight:600">'+pad+'▸ '+c.codice+' '+c.desc+'</option>';
+        h+=buildContoFilter(c.id,depth+1);
+      } else {
+        h+='<option value="'+c.id+'"'+(c.id===vCto?' selected':'')+'>'+pad+'  '+c.codice+' · '+c.desc+'</option>';
+      }
+    }
+    return h;
+  }
+  sCto.innerHTML='<option value="">Tutti</option>'+buildContoFilter(null,0);
+  /* anno */
+  var ha='<option value="">Tutti</option>';
+  for(var i=0;i<anni.length;i++) ha+='<option value="'+anni[i]+'"'+(anni[i]==vAnno?' selected':'')+'>'+anni[i]+'</option>';
+  sAnno.innerHTML=ha;
+  /* values already embedded in option selected attrs above */
 }
 function renderSintesi(){
-  var grp=ge('s-grp').value,fCdc=ge('s-cdc').value,fPrj=ge('s-prj').value,fCto=ge('s-cto').value,fTmov=ge('s-tmov').value;
+  var grp=ge('s-grp').value,fCdc=ge('s-cdc').value,fPrj=ge('s-prj').value,fCto=ge('s-cto').value,fTmov=ge('s-tmov').value,fAnno=ge('s-anno').value;
   var all=allRighe(),dati=[];
   for(var i=0;i<all.length;i++){
     var d=all[i];
-    if(fCdc&&d.cdc!==fCdc) continue;
-    if(fPrj&&d.progetto!==fPrj) continue;
-    if(fCto&&d.conto!==fCto) continue;
+    if(!matchesHier(d.cdc,fCdc,cdcList)) continue;
+    if(fPrj&&!matchesHier(d.progetto,fPrj,progettiList)) continue;
+    if(!matchesHier(d.conto,fCto,contiList)) continue;
     if(fTmov&&d.tmov!==fTmov) continue;
+    if(fAnno&&d.anno!=fAnno) continue;
     dati.push(d);
   }
   var totCP=0,totCC=0,totRP=0,totRC=0;
@@ -657,6 +706,7 @@ function renderSintesi(){
     var d=dati[i],key,label,bcls;
     if(grp==='cdc'){ key=d.cdc; label=d.cdc+' · '+cdcDesc(d.cdc); bcls='b-cdc'; }
     else if(grp==='progetto'){ key=d.progetto||'(senza progetto)'; label=key==='(senza progetto)'?key:key+' · '+projDesc(key); bcls=key==='(senza progetto)'?'b-none':'b-proj'; }
+    else if(grp==='anno'){ key=String(d.anno); label='Anno '+d.anno; bcls='b-none'; }
     else { key=d.conto; label=d.conto+' · '+contoDesc(d.conto); bcls='b-conto'; }
     if(!groups[key]) groups[key]={label:label,bcls:bcls,cP:0,cC:0,rP:0,rC:0,n:0};
     if(d.tipo==='C'&&d.tmov==='P') groups[key].cP+=d.importo;
@@ -674,13 +724,15 @@ function renderSintesi(){
   var th='<thead><tr style="border-bottom:none"><th colspan="3"></th>';
   th+='<th colspan="'+sCols+'" class="r bl" style="border-bottom:1px solid var(--border-strong)">Costi (€)</th>';
   th+='<th colspan="'+sCols+'" class="r bl" style="border-bottom:1px solid var(--border-strong)">Ricavi (€)</th>';
-  th+='<th colspan="2" class="r bl" style="border-bottom:1px solid var(--border-strong)">Margine (€)</th></tr>';
+  th+='<th colspan="'+(hasBoth?3:2)+'" class="r bl" style="border-bottom:1px solid var(--border-strong)">Margine (€)</th></tr>';
   th+='<tr><th>Codice</th><th>Descrizione</th><th class="r">Mov.</th>';
   th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th>';
   if(hasBoth) th+='<th class="r">'+colS+'</th>';
   th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th>';
   if(hasBoth) th+='<th class="r">'+colS+'</th>';
-  th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th></tr></thead>';
+  th+='<th class="r bl">'+colP+'</th><th class="r">'+colC+'</th>';
+  if(hasBoth) th+='<th class="r">'+colS+'</th>';
+  th+='</tr></thead>';
   var tb='<tbody>';
   for(var ki=0;ki<keys.length;ki++){
     var key=keys[ki],g=groups[key],scC=g.cC-g.cP,scR=g.rC-g.rP,mP=g.rP-g.cP,mC=g.rC-g.cC;
@@ -695,8 +747,10 @@ function renderSintesi(){
     tb+='<td class="r" style="color:var(--ricavo)">'+(g.rC?fmt(g.rC):'—')+'</td>';
     if(hasBoth){ var sc2=(g.rP||g.rC)?(scR>=0?'scpos':'scneg'):'sczero',st2=(g.rP||g.rC)?((scR>=0?'+':'−')+fmt(Math.abs(scR))):'—'; tb+='<td class="r '+sc2+'">'+st2+'</td>'; }
     var mp_col=mP>=0?'var(--ricavo)':'var(--costo)';
+    var scM=mC-mP,hasMBoth=(g.cP||g.rP)&&(g.cC||g.rC);
     tb+='<td class="r bl" style="color:'+mp_col+';opacity:.7">'+(g.cP||g.rP?fmt(mP):'—')+'</td>';
     tb+='<td class="r '+(mC>=0?'sp':'sn')+'">'+(g.cC||g.rC?fmt(mC):'—')+'</td>';
+    if(hasBoth){ var scMcls=hasMBoth?(scM>=0?'scpos':'scneg'):'sczero',scMtxt=hasMBoth?((scM>=0?'+':'−')+fmt(Math.abs(scM))):'—'; tb+='<td class="r '+scMcls+'">'+scMtxt+'</td>'; }
     tb+='</tr>';
   }
   var tsc1=scostC<=0?'scpos':'scneg',tsym1=scostC<=0?'−':'+',tsc2=scostR>=0?'scpos':'scneg',tsym2=scostR>=0?'+':'−';
@@ -902,6 +956,7 @@ function renderAll(){ renderList(); updateFilters(); renderSintesi(); }
 
 document.addEventListener('DOMContentLoaded',function(){
   ge('f-data').valueAsDate=new Date();
+  ge('f-anno').value=new Date().getFullYear();
   renderRigheBody(); renderAll();
 });
 </script>
